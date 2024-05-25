@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.util.withSourceCodeAnalysisExceptionUnwrapping
 
 val ktor_version: String by project
 val kotlin_version: String by project
@@ -17,19 +18,34 @@ kotlin {
     compilerOptions.jvmTarget = JvmTarget.JVM_21
 }
 
-application {
-    mainClass.set("com.example.ApplicationKt")
-
-    val isDevelopment: Boolean = project.ext.has("development")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
-}
-
 repositories {
     mavenCentral()
 }
 
 publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/sheng-ri/ktor-redis-session")
+            credentials {
+                username = "sheng-ri"
+                password = (project.findProperty("gpr.key") ?: System.getenv("TOKEN")) as String
+            }
+        }
+    }
+    publications  {
+        register<MavenPublication>("gpr") {
+            from(components["kotlin"])
+            artifact(
+                tasks.kotlinSourcesJar
+            )
+        }
+    }
+}
 
+// why this will include a source with main?
+tasks.kotlinSourcesJar {
+    from(sourceSets.main.get().allSource)
 }
 
 dependencies {
