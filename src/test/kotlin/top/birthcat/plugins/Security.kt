@@ -9,8 +9,9 @@ import io.lettuce.core.RedisClient
 import top.birthcat.redis.Indexable
 import top.birthcat.redis.SessionTrackByIndex
 import top.birthcat.redis.redisCookie
+import kotlin.collections.set
 
-data class MySession(val name: String,val count: Int = 0): Indexable {
+data class MySession(val name: String, val count: Int = 0) : Indexable {
     override fun index(): String {
         return name
     }
@@ -25,6 +26,7 @@ fun Application.configureSecurity() {
             cookie.extensions["SameSite"] = "Strict"
         }
         this@configureSecurity.attributes.put(TRACK_KEY, tracker)
+        cookie<MySession>("test")
     }
     routing {
         get("/session/increment") {
@@ -34,8 +36,17 @@ fun Application.configureSecurity() {
                 tracker.store(mySession.copy(count = mySession.count + 10))
             }
             val session = call.sessions.get<MySession>() ?: MySession("1")
-//            call.sessions.set(session.copy(count = session.count + 1))
             call.respondText("Counter is ${session.count}. Refresh to increment.")
         }
+        get("/test") {
+            call.respondText("Welcome")
+        }
+        get("/1") {
+            call.sessions.set(MySession("1"))
+        }
+        get("/2") {
+            call.sessions.set(MySession("2"))
+        }
     }
+
 }
